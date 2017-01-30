@@ -8,6 +8,7 @@
 require 'warbler/zip_support'
 require 'stringio'
 require 'pathname'
+require 'rbconfig'
 
 module Warbler
   # Class that holds the files that will be stored in the jar file.
@@ -61,7 +62,7 @@ module Warbler
         files = "\"#{files.join('" "')}\""
         classpath = config.java_libs.map { |lib| "\"#{lib.gsub('"', '\\"')}\"" }.join(File::PATH_SEPARATOR)
         # Need to use the version of JRuby in the application to compile it
-        javac_cmd = %Q{java -classpath #{classpath} #{java_version(config)} org.jruby.Main -S jrubyc #{jrubyc_options(config)} #{files}}
+        javac_cmd = %Q{java -classpath #{classpath} #{java_options(config)} org.jruby.Main -S jrubyc #{jrubyc_options(config)} #{files}}
         if which('java').nil? && which('env')
           sh_jrubyc %Q{env -i #{javac_cmd}}
         else
@@ -87,6 +88,10 @@ module Warbler
     end
     private :jrubyc_options
 
+    def java_options(config)
+      "-Djruby.home=#{RbConfig::CONFIG["prefix"]} #{java_version(config)}"
+    end
+    
     def java_version(config)
       config.bytecode_version ? "-Djava.specification.version=#{config.bytecode_version}" : ''
     end
